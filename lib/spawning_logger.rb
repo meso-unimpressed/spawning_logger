@@ -81,46 +81,32 @@
 # # => creates ./log/production/server_child1_child2.log
 # ```
 
-require 'logger'
+require 'spawning_logger/backends/file'
 
 class SpawningLogger < SimpleDelegator
 
   class ArgumentError < ::ArgumentError; end
 
-  # cattr_accessor :child_prefix
-  # cattr_accessor :subdir
+  class << self
+    attr_accessor :child_prefix
 
-  @@child_prefix = nil
-  @@subdir = nil
+    def backend_set?
+      @backend_set
+    end
 
-  def self.configure
-    yield self
+    def backend=(backend)
+      prepend backend
+      @backend_set = true
+    end
+
+    def configure
+      yield self
+    end
   end
 
-  def self.child_prefix=(value)
-    @@child_prefix = value
-  end
-
-  def self.subdir=(value)
-    @@subdir = value
-  end
-
-  # creates the logfile inside a subdir (optional).
-  def initialize(file_path, debug = false)
-    file_path = File.expand_path(file_path)
-
-    @log_base_dir = File.dirname(file_path)
-
-    @log_dir = @log_base_dir
-    @log_dir = File.join(@log_dir, @@subdir) unless @@subdir.nil?
-
-    FileUtils.mkdir_p(@log_dir) if !Dir.exist?(@log_dir)
-
-    @file_name = File.basename(file_path)
+  def initialize(logger)
     @child_loggers = {} # these are the special sub-loggers
-
-     # this creates the main logger
-    super(::Logger.new(File.join(@log_dir, @file_name)))
+    super
   end
 
   # creates a sub logger with filename <orig_file>_<child_prefix>_<child_name>.log
@@ -140,30 +126,4 @@ class SpawningLogger < SimpleDelegator
     self.send(method, message)
     self.spawn(child_name).send(method, message)
   end
-
-  protected
-
-    # creates a logger for child_name. uses child_name and
-    # child_prefix (if configured) for construction of the new logger's filename.
-    #
-    # example:
-    #   origfile.log => origfile_childprefix_childname.log
-    #
-    def create_child_logger(child_name)
-      # remove extension
-      parent_filename = File.basename(@file_name, File.extname(@file_name))
-
-      # add child_prefix + child_id
-      file_basename = [
-        parent_filename, @@child_prefix, child_name
-      ].compact.join('_')
-
-      # add extension
-      file_name = file_basename + File.extname(@file_name)
-
-      # use base dir without subdir, because child logger adds it itself
-      file_path = File.join(@log_base_dir, file_name)
-      self.class.new(file_path)
-    end
-
 end
