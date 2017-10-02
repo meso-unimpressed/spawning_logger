@@ -83,7 +83,7 @@
 
 require 'logger'
 
-class SpawningLogger < ::Logger
+class SpawningLogger < SimpleDelegator
 
   class ArgumentError < ::ArgumentError; end
 
@@ -119,7 +119,8 @@ class SpawningLogger < ::Logger
     @file_name = File.basename(file_path)
     @child_loggers = {} # these are the special sub-loggers
 
-    super(File.join(@log_dir, @file_name)) # this creates the main logger
+     # this creates the main logger
+    super(::Logger.new(File.join(@log_dir, @file_name)))
   end
 
   # creates a sub logger with filename <orig_file>_<child_prefix>_<child_name>.log

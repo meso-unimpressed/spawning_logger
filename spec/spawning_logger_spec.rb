@@ -72,9 +72,9 @@ describe SpawningLogger do
     context 'recursive spawning' do
       subject(:child) { logger.spawn('child1') }
 
-      it 'results in yet another logger instance' do
+      it 'results in yet another spawning logger instance' do
         sub_child = child.spawn('child2')
-        expect(sub_child).to be_a(::Logger)
+        expect(sub_child).to be_a(described_class)
       end
 
       it 'creates the expected log file' do

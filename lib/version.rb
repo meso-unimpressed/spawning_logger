@@ -1,5 +1,5 @@
 require 'logger'
 
-class SpawningLogger < ::Logger
+class SpawningLogger < SimpleDelegator
   VERSION = "0.0.6"
 end
