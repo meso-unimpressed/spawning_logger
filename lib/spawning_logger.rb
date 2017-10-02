@@ -80,11 +80,9 @@
 # # => creates ./log/production/server_child1.log
 # # => creates ./log/production/server_child1_child2.log
 # ```
-
-require 'spawning_logger/backends/file'
+require 'spawning_logger/backends'
 
 class SpawningLogger < SimpleDelegator
-
   class ArgumentError < ::ArgumentError; end
 
   class << self

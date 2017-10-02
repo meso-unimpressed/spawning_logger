@@ -1,7 +1,6 @@
 require 'spec_helper'
 require 'tmpdir'
 require 'spawning_logger'
-require 'spawning_logger/backends/file'
 
 describe SpawningLogger::Backends::File do
   let(:log_base_dir) { Dir.mktmpdir('spawning_logger_test') }
@@ -14,7 +13,7 @@ describe SpawningLogger::Backends::File do
     reset_logger_config
     example.run
     FileUtils.remove_entry(log_base_dir)
-    reset_logger_config
+    SpawningLogger::Backends.send(:remove_const, :File)
   end
 
   matcher :create_log_file do |file_name|
@@ -62,14 +61,6 @@ describe SpawningLogger::Backends::File do
       end
     end
 
-    it 'raises an error if child id is nil' do
-      expect { logger.spawn(nil) }.to raise_error(SpawningLogger::ArgumentError)
-    end
-
-    it 'raises an error if child id is empty' do
-      expect { logger.spawn }.to raise_error(ArgumentError)
-    end
-
     context 'recursive spawning' do
       subject(:child) { logger.spawn('child1') }
 
@@ -84,8 +75,6 @@ describe SpawningLogger::Backends::File do
         )
       end
     end
-
-    it('caches spawned loggers') { skip('NYI') }
   end
 
   private

@@ -10,4 +10,12 @@ RSpec.configure do |config|
   end
 
   config.shared_context_metadata_behavior = :apply_to_host_groups
+
+  config.after do
+    SpawningLogger.send(:remove_const, :Backends)
+    SpawningLogger.send(:remove_const, :ArgumentError)
+    Object.send(:remove_const, :SpawningLogger)
+    $".reject! { |file| file =~ %r{/spawning_logger/lib/} }
+    require 'spawning_logger'
+  end
 end
