@@ -1,8 +1,11 @@
 require 'spec_helper'
 require 'tmpdir'
 require 'spawning_logger'
+require 'spawning_logger/shared_examples/base_logger'
 
-describe SpawningLogger::Backends::File do
+describe SpawningLogger::FileLogger do
+  include_examples :base_logger
+
   let(:log_base_dir) { Dir.mktmpdir('spawning_logger_test') }
   let(:log_dir) { File.join(log_base_dir, 'test_subdir') }
   let(:logfile_name) { 'test_file.log' }
@@ -13,7 +16,6 @@ describe SpawningLogger::Backends::File do
     reset_logger_config
     example.run
     FileUtils.remove_entry(log_base_dir)
-    SpawningLogger::Backends.send(:remove_const, :File)
   end
 
   matcher :create_log_file do |file_name|
@@ -29,17 +31,17 @@ describe SpawningLogger::Backends::File do
 
   context 'with a subdirectory' do
     let(:subdir) { 'development' }
-    before { SpawningLogger.configure { |config| config.subdir = subdir } }
+    before { described_class.configure { |config| config.subdir = subdir } }
 
     it "creates a subdir if it doesn't exist" do
       expected_file = File.join(log_base_dir, subdir, logfile_name)
-      SpawningLogger.new(logfile_path, true)
+      described_class.new(logfile_path, true)
       expect(Pathname.new(expected_file)).to(exist && be_file)
     end
   end
 
   describe '#spawn' do
-    subject(:logger) { SpawningLogger.new(logfile_path) }
+    subject(:logger) { described_class.new(logfile_path) }
 
     it 'returns a logger for the given child id' do
       expect { logger.spawn('childid') }.to(
@@ -49,7 +51,7 @@ describe SpawningLogger::Backends::File do
 
     context 'with child prefix' do
       before do
-        SpawningLogger.configure do |config|
+        described_class.configure do |config|
           config.child_prefix = 'childprefix'
         end
       end
@@ -80,8 +82,7 @@ describe SpawningLogger::Backends::File do
   private
 
   def reset_logger_config
-    SpawningLogger.configure do |config|
-      config.backend = described_class
+    described_class.configure do |config|
       config.child_prefix = nil
       config.subdir = 'test_subdir'
     end

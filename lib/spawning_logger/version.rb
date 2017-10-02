@@ -1,5 +1,3 @@
-require 'delegate'
-
-class SpawningLogger < SimpleDelegator
+module SpawningLogger
   VERSION = "0.0.6"
 end

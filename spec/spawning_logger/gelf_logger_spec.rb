@@ -1,30 +1,29 @@
 require 'spec_helper'
 require 'tmpdir'
 require 'spawning_logger'
+require 'spawning_logger/shared_examples/base_logger'
 
-describe 'SpawningLogger::Backends::GELF' do
-  let(:described_class) { SpawningLogger::Backends::GELF }
+describe 'SpawningLogger::GelfLogger' do
+  let(:described_class) { SpawningLogger::GelfLogger }
   let(:gelf_logger_class) do
     Class.new do
       def initialize(*)
       end
     end
   end
+
   let(:ip) { '127.0.0.1' }
   let(:port) { '1234' }
   let(:type) { 'WAN' }
 
   before do
     allow(Kernel).to receive(:require).with('gelf')
-    load 'spawning_logger/backends/gelf.rb'
+    require 'spawning_logger/gelf_logger.rb'
     stub_const('GELF::Logger', gelf_logger_class)
     reset_logger_config
   end
 
-  after do
-    reset_logger_config
-    SpawningLogger::Backends.send(:remove_const, :GELF)
-  end
+  include_examples :base_logger
 
   matcher :create_a_gelf_logger_with_instance_name do |instance_name|
     supports_block_expectations
@@ -40,14 +39,14 @@ describe 'SpawningLogger::Backends::GELF' do
 
   describe '.new' do
     it 'uses root as default instance name' do
-      expect { SpawningLogger.new(ip, port, type) }.to(
+      expect { described_class.new(ip, port, type) }.to(
         create_a_gelf_logger_with_instance_name('root')
       )
     end
   end
 
   describe '#spawn' do
-    subject(:logger) { SpawningLogger.new(ip, port, type) }
+    subject(:logger) { described_class.new(ip, port, type) }
 
     it 'returns a logger for the given child id' do
       expect { logger.spawn('childid') }.to(
@@ -57,7 +56,7 @@ describe 'SpawningLogger::Backends::GELF' do
 
     context 'with child prefix' do
       before do
-        SpawningLogger.configure do |config|
+        described_class.configure do |config|
           config.child_prefix = 'childprefix'
         end
       end
@@ -88,8 +87,7 @@ describe 'SpawningLogger::Backends::GELF' do
   private
 
   def reset_logger_config
-    SpawningLogger.configure do |config|
-      config.backend = described_class
+    described_class.configure do |config|
       config.child_prefix = nil
     end
   end
