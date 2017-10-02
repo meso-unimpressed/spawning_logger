@@ -1,13 +1,25 @@
-guard :minitest do
+guard :rspec, cmd: 'bundle exec rspec' do
+  require 'guard/rspec/dsl'
+  dsl = Guard::RSpec::Dsl.new(self)
 
-  # run all tests when lib main module file changes
-  watch(%r{^lib/configuration.rb$}) { "test" }
+  # RSpec files
+  rspec = dsl.rspec
+  watch(rspec.spec_helper) { rspec.spec_dir }
+  watch(rspec.spec_support) { rspec.spec_dir }
+  watch(rspec.spec_files)
 
-  # run accompanying test for single source file if it changes
-  watch(%r{^lib/(.*)\.rb$}) {|m| "test/#{m[1]}_test.rb" }
+  # shared examples
+  watch(
+    %r{^(#{Regexp.escape(rspec.spec_dir)}/.+)/shared_examples/.+\.rb$}
+  ) do |m|
+    m[1]
+  end
 
-  # run test whenever it changes
-  watch(%r{^test/(.*)\/?(.*)?_test\.rb$})
-
+  # Ruby files
+  ruby = dsl.ruby
+  watch(ruby.lib_files) do |m|
+    spec_path = m[1][%r{(?<=lib/).*}]
+    rspec.spec.call(spec_path)
+  end
 end
 
